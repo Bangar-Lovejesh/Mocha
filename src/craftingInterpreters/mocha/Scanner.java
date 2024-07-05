@@ -1,6 +1,6 @@
-package src.craftingInterpreters.lox;
+package src.craftingInterpreters.mocha;
 
-import static src.craftingInterpreters.lox.TokenType.*;
+import static src.craftingInterpreters.mocha.TokenType.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,6 +12,7 @@ public class Scanner {
     private final List<Token> tokens = new ArrayList<>();
     private int start = 0;
     private int current = 0;
+
     private int line = 1;
     private static final Map<String, TokenType> keywords;
 
@@ -46,7 +47,7 @@ public class Scanner {
     List<Token> scanTokens() {
         while (!isAtEnd()){
             start = current;
-            scanTokens();
+            scanToken();
         }
         tokens.add(new Token(EOF, "", null,line));
         return tokens;
@@ -110,7 +111,7 @@ public class Scanner {
                     identifier();
                 }
                 else{
-                    Lox.error(line, "Unexpected character " +c+ ".");
+                    Mocha.error(line, "Unexpected character " +c+ ".");
 
                 }
 
@@ -119,7 +120,11 @@ public class Scanner {
 
 
     private void identifier(){
-        while (isAlphaNumeric((peek()))) advance();
+        char curr = peek();
+        while (isAlphaNumeric(curr)) {
+            advance();
+            curr = peek();
+        }
         String text = source.substring(start, current);
         TokenType type = keywords.get(text);
         if (type == null){
@@ -163,7 +168,7 @@ public class Scanner {
         }
 
         if (isAtEnd()){
-            Lox.error(line, "Unexpected end of string");
+            Mocha.error(line, "Unexpected end of string");
             return ;
         }
         advance();
@@ -173,7 +178,7 @@ public class Scanner {
     }
 
     private char peek(){
-        if(!isAtEnd()) return 0;
+        if(isAtEnd()) return '\0';
         return source.charAt(current);
     }
 
