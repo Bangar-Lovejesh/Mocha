@@ -15,6 +15,7 @@ public class Mocha {
     static boolean hadRuntimeError = false;
     private static final Interpreter interpreter = new Interpreter();
     public static void main(String[] args) throws IOException {
+        System.out.println(args[0]);
         if (args.length > 1) {
             System.out.println("Usage: mocha [script]");
             System.exit(64);
@@ -69,6 +70,9 @@ public class Mocha {
         Parser parser = new Parser(tokens);
         List<Stmt> statements = parser.parse();
 // Stop if there was a syntax error.
+        if (hadError) return;
+        Resolver resolver = new Resolver(interpreter);
+        resolver.resolve(statements);
         if (hadError) return;
         interpreter.interpret(statements);
     }

@@ -1,11 +1,28 @@
 package src.craftingInterpreters.mocha;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 
 class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
+    final Environment globals = new Environment();
+    private Environment environment = globals;
+    private final Map<Expr, Integer> locals  = new HashMap<>();
 
-    private Environment environment = new Environment();
+    Interpreter() {
+        globals.define("clock", new MochaCallable() {
+            @Override
+            public int arity() { return 0; }
+            @Override
+            public Object call(Interpreter interpreter,
+                               List<Object> arguments) {
+                return (double)System.currentTimeMillis() / 1000.0;
+            }
+            @Override
+            public String toString() { return "<native fn>"; }
+        });
+    }
 
     @Override
     public Object visitLiteralExpr(Expr.Literal expr) {
@@ -21,12 +38,12 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
     public Object visitUnaryExpr(Expr.Unary expr) {
         Object right = evaluate(expr.right);
 
-        switch(expr.operator.type){
+        switch (expr.operator.type) {
             case BANG:
                 return !isTruthy(right);
             case MINUS:
                 checkNumberOperand(expr.operator, right);
-                return -(double)right;
+                return -(double) right;
 
         }
         return null;
@@ -34,12 +51,22 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
 
     @Override
     public Object visitVariableExpr(Expr.Variable expr) {
-        return environment.get(expr.name);
+        return lookUpVariable(expr.name, expr);
+    }
+
+    public Object lookUpVariable(Token name, Expr expr) {
+        Integer distance = locals.get(expr);
+        if (distance != null) {
+            return environment.getAt(distance, name.lexeme);
+        }
+        else{
+            return globals.get(name);
+        }
     }
 
     private boolean isTruthy(Object object) {
         if (object == null) return false;
-        if (object instanceof Boolean) return (boolean)object;
+        if (object instanceof Boolean) return (boolean) object;
         return true;
     }
 
@@ -50,40 +77,39 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
     public Object visitBinaryExpr(Expr.Binary expr) {
         Object left = evaluate(expr.left);
         Object right = evaluate(expr.right);
-        switch(expr.operator.type){
+        switch (expr.operator.type) {
             case GREATER:
                 checkNumberOperands(expr.operator, left, right);
-                return (double)left > (double)right;
+                return (double) left > (double) right;
             case GREATER_EQUAL:
                 checkNumberOperands(expr.operator, left, right);
-                return (double)left >= (double)right;
+                return (double) left >= (double) right;
             case LESS:
                 checkNumberOperands(expr.operator, left, right);
-                return (double)left < (double)right;
+                return (double) left < (double) right;
             case LESS_EQUAL:
                 checkNumberOperands(expr.operator, left, right);
-                return (double)left <= (double)right;
+                return (double) left <= (double) right;
             case BANG_EQUAL:
-                return !isEqual(left,right);
+                return !isEqual(left, right);
             case EQUAL_EQUAL:
-                return isEqual(left,right);
+                return isEqual(left, right);
             case MINUS:
                 checkNumberOperands(expr.operator, left, right);
 
-                return (double)left - (double)right;
+                return (double) left - (double) right;
             case PLUS:
-                if(left instanceof Double && right instanceof Double){
-                    return (double)left + (double)right;
-                }
-                else if (left instanceof String && right instanceof String){
-                    return (String)left + (String)right;
+                if (left instanceof Double && right instanceof Double) {
+                    return (double) left + (double) right;
+                } else if (left instanceof String && right instanceof String) {
+                    return (String) left + (String) right;
                 }
                 throw new RuntimeError(expr.operator,
                         "Operands must be two numbers or two strings.");
             case SLASH:
-                return (double)left / (double)right;
+                return (double) left / (double) right;
             case STAR:
-                return (double)left * (double)right;
+                return (double) left * (double) right;
         }
         return null;
     }
@@ -95,38 +121,37 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
         return left.equals(right);
     }
 
-    public void checkNumberOperand(Token operator, Object operand){
+    public void checkNumberOperand(Token operator, Object operand) {
         if (operand instanceof Double) return;
         throw new RuntimeError(operator, "Operand Must Be A Number.");
     }
 
-    private void checkNumberOperands(Token operator, Object left, Object right){
+    private void checkNumberOperands(Token operator, Object left, Object right) {
         if (left instanceof Double && right instanceof Double) return;
         throw new RuntimeError(operator, "Operand Must Be A Numbers.");
     }
 
     void interpret(List<Stmt> statements) {
-        try{
-            for(Stmt statement: statements){
+        try {
+            for (Stmt statement : statements) {
                 execute(statement);
             }
-        }
-        catch(RuntimeError error){
+        } catch (RuntimeError error) {
             Mocha.runtimeError(error);
         }
     }
 
-    private void execute(Stmt stmt){
+    private void execute(Stmt stmt) {
         stmt.accept(this);
     }
 
     private String stringify(Object object) {
         if (object == null) return "null";
 
-        if (object instanceof Double){
+        if (object instanceof Double) {
             String text = object.toString();
-            if (text.endsWith(".0")){
-                text = text.substring(0, text.length()-2);
+            if (text.endsWith(".0")) {
+                text = text.substring(0, text.length() - 2);
             }
         }
         return object.toString();
@@ -150,63 +175,114 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
         executeBlock(stmt.statements, new Environment(environment));
         return null;
     }
+
     @Override
-    public Void visitExpressionStmt(Stmt.Expression stmt){
+    public Void visitClassStmt(Stmt.Class stmt) {
+        environment.define(stmt.name.lexeme, null);
+        Map<String, MochaFunction> methods = new HashMap<>();
+        for (Stmt.Function method : stmt.methods) {
+            MochaFunction function = new MochaFunction(method, environment,method.name.lexeme.equals("init"));
+            methods.put(method.name.lexeme, function);
+        }
+        MochaClass klass = new MochaClass(stmt.name.lexeme, methods);
+        environment.assign(stmt.name, klass);
+        return null;
+    }
+
+    @Override
+    public Void visitExpressionStmt(Stmt.Expression stmt) {
         evaluate(stmt.expression);
         return null;
     }
 
     @Override
-    public Void visitPrintStmt(Stmt.Print stmt){
+    public Object visitFunctionStmt(Stmt.Function stmt) {
+        MochaFunction function = new MochaFunction(stmt, environment,false);
+        environment.define(stmt.name.lexeme, function);
+        return null;
+    }
+
+    @Override
+    public Void visitPrintStmt(Stmt.Print stmt) {
         Object value = evaluate(stmt.expression);
         System.out.println(stringify(value));
         return null;
     }
 
     @Override
-    public Void visitVarStmt(Stmt.Var stmt){
+    public Void visitReturnStmt(Stmt.Return stmt) {
         Object value = null;
-        if(stmt.initializer != null){
+        if (stmt.value != null) value = evaluate(stmt.value);
+
+        throw new Return(value);
+    }
+
+    @Override
+    public Void visitVarStmt(Stmt.Var stmt) {
+        Object value = null;
+        if (stmt.initializer != null) {
             value = evaluate(stmt.initializer);
-            environment.define(stmt.name.lexeme,value);
+            environment.define(stmt.name.lexeme, value);
         }
         environment.define(stmt.name.lexeme, value);
         return null;
     }
 
     @Override
-    public Object visitAssignExpr(Expr.Assign expr){
+    public Object visitAssignExpr(Expr.Assign expr) {
         Object value = evaluate(expr.value);
-        environment.assign(expr.name, value);
+        Integer distance = locals.get(expr);
+        if(distance != null){
+            environment.assignAt(distance, expr.name, value);
+        }else{
+            globals.assign(expr.name, value);
+        }
         return value;
     }
 
     @Override
-    public Void visitIfStmt(Stmt.If stmt){
-        if(isTruthy(evaluate(stmt.condition))){
+    public Void visitIfStmt(Stmt.If stmt) {
+        if (isTruthy(evaluate(stmt.condition))) {
             execute(stmt.thenBranch);
-        }
-        else if (stmt.elseBranch != null){
+        } else if (stmt.elseBranch != null) {
             execute(stmt.elseBranch);
         }
         return null;
     }
 
     @Override
-    public Object visitLogicalExpr(Expr.Logical expr){
+    public Object visitLogicalExpr(Expr.Logical expr) {
         Object left = evaluate(expr.left);
-        if(expr.operator.type == TokenType.OR){
-            if(isTruthy(left)) return left;
-        }
-        else{
-            if(!isTruthy(left)) return left;
+        if (expr.operator.type == TokenType.OR) {
+            if (isTruthy(left)) return left;
+        } else {
+            if (!isTruthy(left)) return left;
         }
         return evaluate(expr.right);
     }
 
     @Override
-    public Void visitWhileStmt(Stmt.While stmt){
-        while(isTruthy(evaluate(stmt.condition))){
+    public Object visitSetExpr(Expr.Set expr) {
+        Object object = evaluate(expr.object);
+
+        if(!(object instanceof MochaInstance)){
+            throw new RuntimeError(expr.name, "Only instances have fields.");
+
+        }
+
+        Object value = evaluate(expr.value);
+        ((MochaInstance)object).set(expr.name, value);
+        return value;
+    }
+
+    @Override
+    public Object visitThisExpr(Expr.This expr) {
+        return lookUpVariable(expr.keyword, expr);
+    }
+
+    @Override
+    public Void visitWhileStmt(Stmt.While stmt) {
+        while (isTruthy(evaluate(stmt.condition))) {
             execute(stmt.body);
         }
         return null;
@@ -216,12 +292,33 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
     public Object visitCallExpr(Expr.Call expr) {
         Object callee = evaluate(expr.callee);
         List<Object> arguments = new ArrayList<>();
-        for (Expr argument: expr.arguments){
+        for (Expr argument : expr.arguments) {
             arguments.add(evaluate(argument));
         }
+        if (!(callee instanceof MochaCallable)) {
+            throw new RuntimeError(expr.paren,
+                    "Can only call functions and classes.");
+        }
+        MochaCallable function = (MochaCallable) callee;
+        if (arguments.size() != function.arity()) {
+            throw new RuntimeError(expr.paren, "Expected " +
+                    function.arity() + " arguments but got " +
+                    arguments.size() + ".");
+        }
+        return function.call(this, arguments);
 
-        MochaCallable function = (MochaCallable)callee;
-        return function.call(this,arguments);
     }
 
+    @Override
+    public Object visitGetExpr(Expr.Get expr) {
+        Object object = evaluate(expr.object);
+        if(object instanceof MochaInstance){
+            return ((MochaInstance) object).get(expr.name);
+        }
+        throw new RuntimeError(expr.name, "Only instances have property");
+    }
+
+    void resolve(Expr expr, int depth){
+        locals.put(expr, depth);
+    }
 }
