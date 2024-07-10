@@ -21,7 +21,8 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     }
     private enum ClassType{
         NONE,
-        CLASS
+        CLASS,
+        SUBCLASS
     }
     @Override
     public Void visitBlockStmt(Stmt.Block stmt) {
@@ -106,6 +107,18 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Void visitSuperExpr(Expr.Super expr) {
+        if(currentClass == ClassType.NONE){
+            Mocha.error(expr.keyword, "Can't use 'super' outside of a class.");
+        }
+        else if (currentClass != ClassType.SUBCLASS){
+            Mocha.error(expr.keyword, "Can't use 'super' in a class with no subclass.");
+        }
+        resolveLocal(expr,expr.keyword);
+        return null;
+    }
+
+    @Override
     public Void visitThisExpr(Expr.This expr) {
         if(currentClass == ClassType.NONE){
             Mocha.error(expr.keyword, "Can't use 'THIS' outside of a class.");
@@ -179,6 +192,17 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         currentClass = ClassType.CLASS;
         declare(stmt.name);
         define(stmt.name);
+        if(stmt.superclass != null && stmt.name.lexeme.equals(stmt.superclass.name.lexeme)){
+            Mocha.error(stmt.superclass.name, "A class cannot inherit from itself.");
+        }
+        if(stmt.superclass != null) {
+            currentClass = ClassType.SUBCLASS;
+            resolve(stmt.superclass);
+        }
+        if(stmt.superclass != null){
+            beginScope();
+            scopes.peek().put("super",true);
+        }
         beginScope();
         scopes.peek().put("this", true);
         for (Stmt.Function method : stmt.methods) {
@@ -189,6 +213,9 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
             resolveFunction(method, declaration);
         }
         endScope();
+        if(stmt.superclass != null){
+            endScope();
+        }
         currentClass = enclosingClass;
         return null;
     }

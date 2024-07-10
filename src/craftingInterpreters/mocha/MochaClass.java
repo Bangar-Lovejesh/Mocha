@@ -5,10 +5,12 @@ import java.util.Map;
 
 class MochaClass implements MochaCallable{
     final String name;
+    final MochaClass superclass;
     private final Map<String, MochaFunction> methods;
 
-    MochaClass(String name, Map<String, MochaFunction> methods) {
+    MochaClass(String name, MochaClass superclass, Map<String, MochaFunction> methods) {
         this.name = name;
+        this.superclass = superclass;
         this.methods = methods;
     }
 
@@ -37,6 +39,9 @@ class MochaClass implements MochaCallable{
     public MochaFunction findMethod(String name) {
         if(methods.containsKey(name)){
             return methods.get(name);
+        }
+        if(superclass != null){
+            return superclass.findMethod(name);
         }
         return null;
     }

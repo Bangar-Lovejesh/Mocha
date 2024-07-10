@@ -178,13 +178,27 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
 
     @Override
     public Void visitClassStmt(Stmt.Class stmt) {
+        Object superclass = null;
+        if(stmt.superclass != null){
+            superclass = evaluate(stmt.superclass);
+            if(!(superclass instanceof MochaClass)){
+                throw new RuntimeError(stmt.superclass.name, "Superclass must be a class");
+            }
+        }
         environment.define(stmt.name.lexeme, null);
+        if(stmt.superclass != null){
+            environment =  new Environment(environment);
+            environment.define("super",superclass);
+        }
         Map<String, MochaFunction> methods = new HashMap<>();
         for (Stmt.Function method : stmt.methods) {
             MochaFunction function = new MochaFunction(method, environment,method.name.lexeme.equals("init"));
             methods.put(method.name.lexeme, function);
         }
-        MochaClass klass = new MochaClass(stmt.name.lexeme, methods);
+        MochaClass klass = new MochaClass(stmt.name.lexeme,(MochaClass)superclass, methods);
+        if(superclass != null){
+            environment = environment.enclosing;
+        }
         environment.assign(stmt.name, klass);
         return null;
     }
@@ -273,6 +287,19 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
         Object value = evaluate(expr.value);
         ((MochaInstance)object).set(expr.name, value);
         return value;
+    }
+
+    @Override
+    public Object visitSuperExpr(Expr.Super expr) {
+        int distance = locals.get(expr);
+        MochaClass superclass = (MochaClass)environment.getAt(distance, "super");
+        MochaInstance object = (MochaInstance)environment.getAt(distance-1,"this");
+        MochaFunction method = superclass.findMethod(expr.method.lexeme);
+        if(method == null){
+            throw new RuntimeError(expr.method, "Undefined property '" + expr.method.lexeme + "'.");
+        }
+        return method.bind(object);
+
     }
 
     @Override
