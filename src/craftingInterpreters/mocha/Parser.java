@@ -310,6 +310,7 @@ public class Parser {
         while (!isAtEnd()){
             statements.add(declaration());
         }
+
         return statements;
     }
 
