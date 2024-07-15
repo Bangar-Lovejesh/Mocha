@@ -40,7 +40,7 @@ class MochaClass implements MochaCallable{
         if(this.methods.containsKey(name)){
             return this.methods.get(name);
         }
-        if(null != superclass){
+        if(null != this.superclass){
             return this.superclass.findMethod(name);
         }
         return null;

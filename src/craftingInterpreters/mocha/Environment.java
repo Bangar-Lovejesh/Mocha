@@ -20,6 +20,7 @@ public class Environment {
     Environment ancestor(int distance){
         Environment environment = this;
         for(int i = 0; i < distance; i++){
+            assert null != environment;
             environment = environment.enclosing;
         }
         return environment;
@@ -29,7 +30,7 @@ public class Environment {
         if (this.values.containsKey(name.lexeme)) {
             return this.values.get(name.lexeme);
         }
-        if (null != enclosing) {
+        if (null != this.enclosing) {
             return this.enclosing.get(name);
         }
         throw new RuntimeError(name, "Undefined variable '" + name.lexeme + "'");
@@ -40,7 +41,7 @@ public class Environment {
             this.values.put(name.lexeme, value);
             return;
         }
-        if (null != enclosing) {
+        if (null != this.enclosing) {
             this.enclosing.assign(name, value);
             return;
         }

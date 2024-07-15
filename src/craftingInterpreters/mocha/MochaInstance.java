@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 class MochaInstance {
-    private MochaClass klass;
+    private final MochaClass klass;
     private final Map<String, Object> fields = new HashMap<>();
 
     MochaInstance(MochaClass klass) {

@@ -20,8 +20,8 @@ abstract class Stmt {
  }
 
  @Override
- <R> R accept(Visitor<R> visitor) {
- return visitor.visitBlockStmt(this);
+ <R> void accept(Visitor<R> visitor) {
+  visitor.visitBlockStmt(this);
  }
 
  final List<Stmt> statements;
@@ -34,8 +34,8 @@ abstract class Stmt {
  }
 
  @Override
- <R> R accept(Visitor<R> visitor) {
- return visitor.visitClassStmt(this);
+ <R> void accept(Visitor<R> visitor) {
+  visitor.visitClassStmt(this);
  }
 
  final Token name;
@@ -48,8 +48,8 @@ abstract class Stmt {
  }
 
  @Override
- <R> R accept(Visitor<R> visitor) {
- return visitor.visitExpressionStmt(this);
+ <R> void accept(Visitor<R> visitor) {
+  visitor.visitExpressionStmt(this);
  }
 
  final Expr expression;
@@ -62,8 +62,8 @@ abstract class Stmt {
  }
 
  @Override
- <R> R accept(Visitor<R> visitor) {
- return visitor.visitFunctionStmt(this);
+ <R> void accept(Visitor<R> visitor) {
+  visitor.visitFunctionStmt(this);
  }
 
  final Token name;
@@ -78,8 +78,8 @@ abstract class Stmt {
  }
 
  @Override
- <R> R accept(Visitor<R> visitor) {
- return visitor.visitIfStmt(this);
+ <R> void accept(Visitor<R> visitor) {
+  visitor.visitIfStmt(this);
  }
 
  final Expr condition;
@@ -92,8 +92,8 @@ abstract class Stmt {
  }
 
  @Override
- <R> R accept(Visitor<R> visitor) {
- return visitor.visitPrintStmt(this);
+ <R> void accept(Visitor<R> visitor) {
+  visitor.visitPrintStmt(this);
  }
 
  final Expr expression;
@@ -105,8 +105,8 @@ abstract class Stmt {
  }
 
  @Override
- <R> R accept(Visitor<R> visitor) {
- return visitor.visitReturnStmt(this);
+ <R> void accept(Visitor<R> visitor) {
+  visitor.visitReturnStmt(this);
  }
 
  final Token keyword;
@@ -119,8 +119,8 @@ abstract class Stmt {
  }
 
  @Override
- <R> R accept(Visitor<R> visitor) {
- return visitor.visitVarStmt(this);
+ <R> void accept(Visitor<R> visitor) {
+  visitor.visitVarStmt(this);
  }
 
  final Token name;
@@ -133,13 +133,13 @@ abstract class Stmt {
  }
 
  @Override
- <R> R accept(Visitor<R> visitor) {
- return visitor.visitWhileStmt(this);
+ <R> void accept(Visitor<R> visitor) {
+  visitor.visitWhileStmt(this);
  }
 
  final Expr condition;
  final Stmt body;
  }
 
- abstract <R> R accept(Visitor<R> visitor);
+ abstract <R> void accept(Visitor<R> visitor);
 }

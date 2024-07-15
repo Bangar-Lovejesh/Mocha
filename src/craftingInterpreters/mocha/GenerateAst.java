@@ -14,7 +14,7 @@ public class GenerateAst {
         }
         String outputDir = args[0];
 
-        GenerateAst.defineAst(outputDir, "Expr", Arrays.asList(
+        defineAst(outputDir, "Expr", Arrays.asList(
             "Assign : Token name, Expr value",
             "Binary : Expr left, Token operator, Expr right",
             "Call : Expr callee, Token paren, List<Expr> arguments",
@@ -29,7 +29,7 @@ public class GenerateAst {
             "Variable : Token name"
         ));
 
-        GenerateAst.defineAst(outputDir, "Stmt", Arrays.asList(
+        defineAst(outputDir, "Stmt", Arrays.asList(
                 "Block : List<Stmt> statements",
                 "Class : Token name, Expr.Variable superclass, List<Stmt.Function> methods",
                 "Expression : Expr expression",
@@ -49,12 +49,12 @@ public class GenerateAst {
         writer.println("import java.util.List;");
         writer.println();
         writer.println("abstract class " + baseName + " {");
-        GenerateAst.defineVisitor(writer, baseName, types);
+        defineVisitor(writer, baseName, types);
         for(String type: types){
             String className = type.split(":")[0].trim();
             String fields = type.split(":")[1].trim();
 //            System.out.println(fields);
-            GenerateAst.defineType(writer, baseName, className, fields);
+            defineType(writer, baseName, className, fields);
         }
         writer.println();
         writer.println(" abstract <R> R accept(Visitor<R> visitor);");
