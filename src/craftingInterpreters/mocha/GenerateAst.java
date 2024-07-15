@@ -2,18 +2,19 @@ package src.craftingInterpreters.mocha;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
 public class GenerateAst {
     public static void main(String[] args) throws IOException {
-        if (args.length != 1){
+        if (1 != args.length){
             System.err.println("Usage: generate_ast <output directory>");
             System.exit(64);
         }
         String outputDir = args[0];
 
-        defineAst(outputDir, "Expr", Arrays.asList(
+        GenerateAst.defineAst(outputDir, "Expr", Arrays.asList(
             "Assign : Token name, Expr value",
             "Binary : Expr left, Token operator, Expr right",
             "Call : Expr callee, Token paren, List<Expr> arguments",
@@ -28,7 +29,7 @@ public class GenerateAst {
             "Variable : Token name"
         ));
 
-        defineAst(outputDir, "Stmt", Arrays.asList(
+        GenerateAst.defineAst(outputDir, "Stmt", Arrays.asList(
                 "Block : List<Stmt> statements",
                 "Class : Token name, Expr.Variable superclass, List<Stmt.Function> methods",
                 "Expression : Expr expression",
@@ -42,18 +43,18 @@ public class GenerateAst {
     }
     private static void defineAst(String outputDir, String baseName , List<String> types) throws IOException {
         String path = outputDir + "/" + baseName + ".java";
-        PrintWriter writer = new PrintWriter(path, "UTF-8");
+        PrintWriter writer = new PrintWriter(path, StandardCharsets.UTF_8);
         writer.println("package src.craftingInterpreters.mocha;");
         writer.println("");
         writer.println("import java.util.List;");
         writer.println();
         writer.println("abstract class " + baseName + " {");
-        defineVisitor(writer, baseName, types);
+        GenerateAst.defineVisitor(writer, baseName, types);
         for(String type: types){
             String className = type.split(":")[0].trim();
             String fields = type.split(":")[1].trim();
 //            System.out.println(fields);
-            defineType(writer, baseName, className, fields);
+            GenerateAst.defineType(writer, baseName, className, fields);
         }
         writer.println();
         writer.println(" abstract <R> R accept(Visitor<R> visitor);");
