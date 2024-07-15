@@ -1,26 +1,32 @@
 package src.craftingInterpreters.mocha;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Map;
 
 class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
     final Environment globals = new Environment();
+    private final Map<Expr, Integer> locals = new HashMap<>();
     private Environment environment = this.globals;
-    private final Map<Expr, Integer> locals  = new HashMap<>();
 
     Interpreter() {
         this.globals.define("clock", new MochaCallable() {
             @Override
-            public int arity() { return 0; }
+            public int arity() {
+                return 0;
+            }
+
             @Override
             public Object call(Interpreter interpreter,
                                List<Object> arguments) {
                 return System.currentTimeMillis() / 1000.0;
             }
+
             @Override
-            public String toString() { return "<native fn>"; }
+            public String toString() {
+                return "<native fn>";
+            }
         });
     }
 
@@ -58,8 +64,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
         Integer distance = this.locals.get(expr);
         if (null != distance) {
             return this.environment.getAt(distance, name.lexeme);
-        }
-        else{
+        } else {
             return this.globals.get(name);
         }
     }
@@ -179,24 +184,24 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
     @Override
     public Void visitClassStmt(Stmt.Class stmt) {
         Object superclass = null;
-        if(null != stmt.superclass){
+        if (null != stmt.superclass) {
             superclass = this.evaluate(stmt.superclass);
-            if(!(superclass instanceof MochaClass)){
+            if (!(superclass instanceof MochaClass)) {
                 throw new RuntimeError(stmt.superclass.name, "Superclass must be a class");
             }
         }
         this.environment.define(stmt.name.lexeme, null);
-        if(null != stmt.superclass){
-            this.environment =  new Environment(this.environment);
-            this.environment.define("super",superclass);
+        if (null != stmt.superclass) {
+            this.environment = new Environment(this.environment);
+            this.environment.define("super", superclass);
         }
         Map<String, MochaFunction> methods = new HashMap<>();
         for (Stmt.Function method : stmt.methods) {
-            MochaFunction function = new MochaFunction(method, this.environment,method.name.lexeme.equals("init"));
+            MochaFunction function = new MochaFunction(method, this.environment, method.name.lexeme.equals("init"));
             methods.put(method.name.lexeme, function);
         }
-        MochaClass klass = new MochaClass(stmt.name.lexeme,(MochaClass)superclass, methods);
-        if(null != superclass){
+        MochaClass klass = new MochaClass(stmt.name.lexeme, (MochaClass) superclass, methods);
+        if (null != superclass) {
             this.environment = this.environment.enclosing;
         }
         this.environment.assign(stmt.name, klass);
@@ -211,7 +216,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
 
     @Override
     public Object visitFunctionStmt(Stmt.Function stmt) {
-        MochaFunction function = new MochaFunction(stmt, this.environment,false);
+        MochaFunction function = new MochaFunction(stmt, this.environment, false);
         this.environment.define(stmt.name.lexeme, function);
         return null;
     }
@@ -246,9 +251,9 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
     public Object visitAssignExpr(Expr.Assign expr) {
         Object value = this.evaluate(expr.value);
         Integer distance = this.locals.get(expr);
-        if(null != distance){
+        if (null != distance) {
             this.environment.assignAt(distance, expr.name, value);
-        }else{
+        } else {
             this.globals.assign(expr.name, value);
         }
         return value;
@@ -279,13 +284,13 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
     public Object visitSetExpr(Expr.Set expr) {
         Object object = this.evaluate(expr.object);
 
-        if(!(object instanceof MochaInstance)){
+        if (!(object instanceof MochaInstance)) {
             throw new RuntimeError(expr.name, "Only instances have fields.");
 
         }
 
         Object value = this.evaluate(expr.value);
-        ((MochaInstance)object).set(expr.name, value);
+        ((MochaInstance) object).set(expr.name, value);
         return value;
     }
 
@@ -293,9 +298,9 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
     public Object visitSuperExpr(Expr.Super expr) {
         int distance = this.locals.get(expr);
         MochaClass superclass = (MochaClass) this.environment.getAt(distance, "super");
-        MochaInstance object = (MochaInstance) this.environment.getAt(distance-1,"this");
+        MochaInstance object = (MochaInstance) this.environment.getAt(distance - 1, "this");
         MochaFunction method = superclass.findMethod(expr.method.lexeme);
-        if(null == method){
+        if (null == method) {
             throw new RuntimeError(expr.method, "Undefined property '" + expr.method.lexeme + "'.");
         }
         return method.bind(object);
@@ -338,13 +343,13 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Object> {
     @Override
     public Object visitGetExpr(Expr.Get expr) {
         Object object = this.evaluate(expr.object);
-        if(object instanceof MochaInstance){
+        if (object instanceof MochaInstance) {
             return ((MochaInstance) object).get(expr.name);
         }
         throw new RuntimeError(expr.name, "Only instances have property");
     }
 
-    void resolve(Expr expr, int depth){
+    void resolve(Expr expr, int depth) {
         this.locals.put(expr, depth);
     }
 }

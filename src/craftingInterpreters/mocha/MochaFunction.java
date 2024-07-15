@@ -2,7 +2,7 @@ package src.craftingInterpreters.mocha;
 
 import java.util.List;
 
-class MochaFunction implements MochaCallable{
+class MochaFunction implements MochaCallable {
     private final Stmt.Function declaration;
     private final Environment closure;
     private final boolean isInitializer;
@@ -12,6 +12,7 @@ class MochaFunction implements MochaCallable{
         this.declaration = declaration;
         this.isInitializer = isInitializer;
     }
+
     @Override
     public int arity() {
         return this.declaration.params.size();
@@ -25,10 +26,10 @@ class MochaFunction implements MochaCallable{
             environment.define(this.declaration.params.get(i).lexeme,
                     arguments.get(i));
         }
-        try{
+        try {
             interpreter.executeBlock(this.declaration.body, environment);
         } catch (Return returnValue) {
-            if(this.isInitializer) return this.closure.getAt(0,"this");
+            if (this.isInitializer) return this.closure.getAt(0, "this");
             return returnValue.value;
         }
         if (this.isInitializer) return this.closure.getAt(0, "this");
@@ -37,7 +38,7 @@ class MochaFunction implements MochaCallable{
 
     @Override
     public String toString() {
-        return "<fn "+ this.declaration.name.lexeme+">";
+        return "<fn " + this.declaration.name.lexeme + ">";
     }
 
     MochaFunction bind(MochaInstance instance) {

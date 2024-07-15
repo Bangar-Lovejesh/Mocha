@@ -11,9 +11,10 @@ import java.util.List;
 
 
 public class Mocha {
+    private static final Interpreter interpreter = new Interpreter();
     static boolean hadError;
     static boolean hadRuntimeError;
-    private static final Interpreter interpreter = new Interpreter();
+
     public static void main(String[] args) throws IOException {
         if (1 < args.length) {
             System.out.println("Usage: mocha [script]");
@@ -34,7 +35,7 @@ public class Mocha {
     private static void runPrompt() throws IOException {
         InputStreamReader input = new InputStreamReader(System.in);
         BufferedReader reader = new BufferedReader(input);
-        for (;;) {
+        for (; ; ) {
             System.out.print("> ");
             String line = reader.readLine();
             if (null == line) break;
@@ -42,11 +43,10 @@ public class Mocha {
             hadError = false;
         }
     }
+
     static void error(int line, String message) {
         report(line, "", message);
     }
-
-
 
 
     private static void report(int line, String where, String message) {
@@ -77,7 +77,7 @@ public class Mocha {
     }
 
     static void runtimeError(RuntimeError error) {
-        System.err.println(error.getMessage() + "\n[line "+ error.token.line + "]");
+        System.err.println(error.getMessage() + "\n[line " + error.token.line + "]");
         hadRuntimeError = true;
     }
 }

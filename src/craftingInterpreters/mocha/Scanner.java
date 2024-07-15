@@ -1,19 +1,13 @@
 package src.craftingInterpreters.mocha;
 
-import static src.craftingInterpreters.mocha.TokenType.*;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Scanner {
-    private final String source;
-    private final List<Token> tokens = new ArrayList<>();
-    private int start;
-    private int current;
+import static src.craftingInterpreters.mocha.TokenType.*;
 
-    private int line = 1;
+public class Scanner {
     private static final Map<String, TokenType> keywords;
 
     static {
@@ -30,14 +24,17 @@ public class Scanner {
         keywords.put("true", TRUE);
         keywords.put("false", FALSE);
         keywords.put("print", PRINT);
-        keywords.put("super",SUPER);
+        keywords.put("super", SUPER);
         keywords.put("while", WHILE);
         keywords.put("var", VAR);
-        keywords.put("this",THIS);
+        keywords.put("this", THIS);
     }
 
-
-
+    private final String source;
+    private final List<Token> tokens = new ArrayList<>();
+    private int start;
+    private int current;
+    private int line = 1;
 
 
     Scanner(String source) {
@@ -45,7 +42,7 @@ public class Scanner {
     }
 
     List<Token> scanTokens() {
-        while (!this.isAtEnd()){
+        while (!this.isAtEnd()) {
             this.start = this.current;
             this.scanToken();
         }
@@ -53,30 +50,40 @@ public class Scanner {
         return this.tokens;
     }
 
-    private void scanToken(){
+    private void scanToken() {
         char c = this.advance();
-        switch (c){
+        switch (c) {
             case '(':
-                this.addToken(LEFT_PAREN);break;
+                this.addToken(LEFT_PAREN);
+                break;
             case ')':
-                this.addToken(RIGHT_PAREN);break;
+                this.addToken(RIGHT_PAREN);
+                break;
             case '{':
-                this.addToken(LEFT_BRACE);break;
+                this.addToken(LEFT_BRACE);
+                break;
             case '}':
-                this.addToken(RIGHT_BRACE);break;
+                this.addToken(RIGHT_BRACE);
+                break;
             case ',':
-                this.addToken(COMMA);break;
+                this.addToken(COMMA);
+                break;
             case '.':
-                this.addToken(DOT);break;
+                this.addToken(DOT);
+                break;
             case '-':
-                this.addToken(MINUS);break;
+                this.addToken(MINUS);
+                break;
             case ';':
-                this.addToken(SEMICOLON);break;
+                this.addToken(SEMICOLON);
+                break;
             case '+':
-                this.addToken(PLUS);break;
+                this.addToken(PLUS);
+                break;
             case '*':
-                this.addToken(STAR);break;
-            case '!' :
+                this.addToken(STAR);
+                break;
+            case '!':
                 this.addToken(this.match('=') ? BANG_EQUAL : BANG);
                 break;
             case '=':
@@ -89,18 +96,17 @@ public class Scanner {
                 this.addToken(this.match('=') ? GREATER_EQUAL : GREATER);
                 break;
             case '/':
-                if (this.match('/')){
-                    while('\n' != this.peek() && !this.isAtEnd()){
+                if (this.match('/')) {
+                    while ('\n' != this.peek() && !this.isAtEnd()) {
                         this.advance();
                     }
 
-            }
-                else{
+                } else {
                     this.addToken(SLASH);
                 }
                 break;
             case 'o':
-                if('r' == this.peek()){
+                if ('r' == this.peek()) {
                     this.addToken(OR);
                 }
                 break;
@@ -112,17 +118,16 @@ public class Scanner {
                 this.line++;
                 break;
             case '"':
-                this.string();break;
+                this.string();
+                break;
 
             default:
-                if (this.isDigit(c)){
+                if (this.isDigit(c)) {
                     this.number();
-                }
-                else if(this.isAlpha(c)){
+                } else if (this.isAlpha(c)) {
                     this.identifier();
-                }
-                else{
-                    Mocha.error(this.line, "Unexpected character " +c+ ".");
+                } else {
+                    Mocha.error(this.line, "Unexpected character " + c + ".");
 
                 }
 
@@ -130,7 +135,7 @@ public class Scanner {
     }
 
 
-    private void identifier(){
+    private void identifier() {
         char curr = this.peek();
         while (this.isAlphaNumeric(curr)) {
             this.advance();
@@ -138,28 +143,28 @@ public class Scanner {
         }
         String text = this.source.substring(this.start, this.current);
         TokenType type = keywords.get(text);
-        if (null == type){
+        if (null == type) {
             type = IDENTIFIER;
         }
         this.addToken(type);
     }
 
-    private Boolean isAlpha(char c){
+    private Boolean isAlpha(char c) {
         return ('a' <= c && 'z' >= c) || ('A' <= c && 'Z' >= c) || '_' == c;
     }
 
-    private Boolean isAlphaNumeric(char c){
+    private Boolean isAlphaNumeric(char c) {
         return this.isAlpha(c) || this.isDigit(c);
     }
 
-    private Boolean isDigit(char c){
+    private Boolean isDigit(char c) {
         return '0' <= c && '9' >= c;
     }
 
-    private void number(){
+    private void number() {
         while (this.isDigit(this.peek())) this.advance();
 
-        if ('.' == this.peek() && this.isDigit(this.peekNext())){
+        if ('.' == this.peek() && this.isDigit(this.peekNext())) {
             do this.advance();
             while (this.isDigit(this.peek()));
         }
@@ -167,20 +172,20 @@ public class Scanner {
         this.addToken(NUMBER, Double.parseDouble(this.source.substring(this.start, this.current)));
     }
 
-    private char peekNext(){
+    private char peekNext() {
         if (this.current + 1 >= this.source.length()) return '\0';
         return this.source.charAt(this.current + 1);
     }
 
-    private void string(){
-        while ('"' != this.peek() && !this.isAtEnd()){
-            if('\n' == this.peek()) this.line++;
+    private void string() {
+        while ('"' != this.peek() && !this.isAtEnd()) {
+            if ('\n' == this.peek()) this.line++;
             this.advance();
         }
 
-        if (this.isAtEnd()){
+        if (this.isAtEnd()) {
             Mocha.error(this.line, "Unexpected end of string");
-            return ;
+            return;
         }
         this.advance();
 
@@ -188,33 +193,33 @@ public class Scanner {
         this.addToken(STRING, value);
     }
 
-    private char peek(){
-        if(this.isAtEnd()) return '\0';
+    private char peek() {
+        if (this.isAtEnd()) return '\0';
         return this.source.charAt(this.current);
     }
 
-    private Boolean match(char expected){
+    private Boolean match(char expected) {
         if (this.isAtEnd()) return false;
         if (this.source.charAt(this.current) != expected) return false;
         this.current++;
         return true;
     }
 
-    private char advance(){
+    private char advance() {
         this.current++;
-        return this.source.charAt(this.current -1);
+        return this.source.charAt(this.current - 1);
     }
 
-    private void addToken(TokenType type){
-        this.addToken(type,null);
+    private void addToken(TokenType type) {
+        this.addToken(type, null);
     }
 
-    private void addToken(TokenType type, Object literal){
+    private void addToken(TokenType type, Object literal) {
         String text = this.source.substring(this.start, this.current);
-        this.tokens.add(new Token(type,text,literal, this.line));
+        this.tokens.add(new Token(type, text, literal, this.line));
     }
 
-    private boolean isAtEnd(){
+    private boolean isAtEnd() {
         return this.current >= this.source.length();
     }
 

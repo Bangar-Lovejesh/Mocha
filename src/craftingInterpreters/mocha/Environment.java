@@ -1,25 +1,27 @@
 package src.craftingInterpreters.mocha;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 public class Environment {
-    private final Map<String, Object> values = new HashMap<>();
     final Environment enclosing;
+    private final Map<String, Object> values = new HashMap<>();
 
-    Environment(){
+    Environment() {
         this.enclosing = null;
     }
-    Environment(Environment enclosing){
+
+    Environment(Environment enclosing) {
         this.enclosing = enclosing;
     }
+
     void define(String key, Object value) {
         this.values.put(key, value);
     }
 
-    Environment ancestor(int distance){
+    Environment ancestor(int distance) {
         Environment environment = this;
-        for(int i = 0; i < distance; i++){
+        for (int i = 0; i < distance; i++) {
             assert null != environment;
             environment = environment.enclosing;
         }
@@ -37,7 +39,7 @@ public class Environment {
     }
 
     void assign(Token name, Object value) {
-        if(this.values.containsKey(name.lexeme)) {
+        if (this.values.containsKey(name.lexeme)) {
             this.values.put(name.lexeme, value);
             return;
         }

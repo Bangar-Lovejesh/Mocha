@@ -3,7 +3,7 @@ package src.craftingInterpreters.mocha;
 import java.util.List;
 import java.util.Map;
 
-class MochaClass implements MochaCallable{
+class MochaClass implements MochaCallable {
     final String name;
     final MochaClass superclass;
     private final Map<String, MochaFunction> methods;
@@ -22,7 +22,7 @@ class MochaClass implements MochaCallable{
     @Override
     public int arity() {
         MochaFunction initializer = this.findMethod("init");
-        if(null == initializer) return 0;
+        if (null == initializer) return 0;
         return initializer.arity();
     }
 
@@ -37,10 +37,10 @@ class MochaClass implements MochaCallable{
     }
 
     public MochaFunction findMethod(String name) {
-        if(this.methods.containsKey(name)){
+        if (this.methods.containsKey(name)) {
             return this.methods.get(name);
         }
-        if(null != this.superclass){
+        if (null != this.superclass) {
             return this.superclass.findMethod(name);
         }
         return null;

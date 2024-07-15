@@ -7,10 +7,8 @@ import java.util.List;
 import static src.craftingInterpreters.mocha.TokenType.*;
 
 public class Parser {
-    private static class ParseError extends RuntimeException {}
     private final List<Token> tokens;
     private int current;
-
     Parser(List<Token> tokens) {
         this.tokens = tokens;
     }
@@ -21,15 +19,14 @@ public class Parser {
 
     private Expr assignment() {
         Expr expr = this.or();
-        if(this.match(EQUAL)){
+        if (this.match(EQUAL)) {
             Token equals = this.previous();
             Expr value = this.assignment();
 
-            if (expr instanceof Expr.Variable){
-                Token name = ((Expr.Variable)expr).name;
-                return new Expr.Assign(name,value);
-            }
-            else if(expr instanceof Expr.Get get) {
+            if (expr instanceof Expr.Variable) {
+                Token name = ((Expr.Variable) expr).name;
+                return new Expr.Assign(name, value);
+            } else if (expr instanceof Expr.Get get) {
                 return new Expr.Set(get.object, get.name, value);
             }
             throw this.error(equals, "Invalid assignment target.");
@@ -40,103 +37,106 @@ public class Parser {
 
     private Expr or() {
         Expr expr = this.and();
-        while(this.match(OR)){
+        while (this.match(OR)) {
             Token operator = this.previous();
             Expr right = this.and();
-            expr = new Expr.Logical(expr,operator,right);
+            expr = new Expr.Logical(expr, operator, right);
         }
         return expr;
     }
+
     private Expr and() {
         Expr expr = this.equality();
 
-        while(this.match(AND)){
+        while (this.match(AND)) {
             Token operator = this.previous();
             Expr right = this.equality();
-            expr = new Expr.Logical(expr,operator,right);
+            expr = new Expr.Logical(expr, operator, right);
         }
         return expr;
     }
+
     private Stmt statement() {
-        if(this.match(FOR)) return this.forStatement();
-        if(this.match(IF)) return this.ifStatement();
-        if(this.match(PRINT)) return this.printStatement();
-        if(this.match(RETURN)) return this.returnStatement();
-        if(this.match(WHILE)) return this.whileStatement();
-        if(this.match(LEFT_BRACE)) return new Stmt.Block(this.block());
+        if (this.match(FOR)) return this.forStatement();
+        if (this.match(IF)) return this.ifStatement();
+        if (this.match(PRINT)) return this.printStatement();
+        if (this.match(RETURN)) return this.returnStatement();
+        if (this.match(WHILE)) return this.whileStatement();
+        if (this.match(LEFT_BRACE)) return new Stmt.Block(this.block());
         return this.expressionStatement();
     }
 
     private Stmt returnStatement() {
         Token keyword = this.previous();
         Expr value = null;
-        if (!this.check(SEMICOLON)){
+        if (!this.check(SEMICOLON)) {
             value = this.expression();
         }
         this.consume(SEMICOLON, "Expect ';' after return value.");
-        return new Stmt.Return(keyword,value);
+        return new Stmt.Return(keyword, value);
     }
 
-    private Stmt forStatement(){
+    private Stmt forStatement() {
         this.consume(LEFT_PAREN, "Expect '(' after 'for'.");
 
         Stmt initializer;
-        if(this.match(SEMICOLON)){
+        if (this.match(SEMICOLON)) {
             initializer = null;
-        }
-        else if (this.match(VAR)){
+        } else if (this.match(VAR)) {
             initializer = this.varDeclaration();
-        }
-        else{
+        } else {
             initializer = this.expressionStatement();
         }
 
         Expr condition = null;
-        if(!this.check(SEMICOLON)){
+        if (!this.check(SEMICOLON)) {
             condition = this.expression();
         }
         this.consume(SEMICOLON, "Expect ';' after the loop condition");
 
         Expr increment = null;
-        if (!this.check(RIGHT_PAREN)){
+        if (!this.check(RIGHT_PAREN)) {
             increment = this.expression();
         }
         this.consume(RIGHT_PAREN, "Expect ')' after the loop condition");
 
         Stmt body = this.statement();
 
-        if (null != increment){
+        if (null != increment) {
             body = new Stmt.Block(
                     Arrays.asList(body, new Stmt.Expression(increment))
             );
         }
-        if(null == condition) {
+        if (null == condition) {
             condition = new Expr.Literal(true);
         }
         body = new Stmt.While(condition, body);
 
-        if(null != initializer){
+        if (null != initializer) {
             body = new Stmt.Block(Arrays.asList(initializer, body));
         }
         return body;
     }
+
     private Stmt ifStatement() {
         this.consume(LEFT_PAREN, "Expect '(' after 'if'.");
         Expr condition = this.expression();
         this.consume(RIGHT_PAREN, "Expect ')' after 'if'.");
         Stmt thenBranch = this.statement();
         Stmt elseBranch = this.statement();
-        if(this.match(ELSE)){
+        if (this.match(ELSE)) {
             elseBranch = this.statement();
         }
         return new Stmt.If(condition, thenBranch, elseBranch);
     }
+
     private Stmt printStatement() {
         Expr value = this.expression();
         this.consume(SEMICOLON, "Expect ';' after value.");
         return new Stmt.Print(value);
     }
-    private Stmt whileStatement(){
+
+    private Stmt whileStatement() {
         this.consume(LEFT_PAREN, "Expect '(' after while.");
         Expr condition = this.expression();
         this.consume(RIGHT_PAREN, "Expect ')' after while.");
@@ -144,6 +144,7 @@ public class Parser {
 
         return new Stmt.While(condition, body);
     }
+
     private Stmt expressionStatement() {
         Expr expr = this.expression();
         this.consume(SEMICOLON, "Expect ';' after expression.");
@@ -182,7 +183,7 @@ public class Parser {
     private Expr term() {
         Expr expr = this.factor();
 
-        while (this.match(MINUS,PLUS)){
+        while (this.match(MINUS, PLUS)) {
             Token operator = this.previous();
             Expr right = this.factor();
             expr = new Expr.Binary(expr, operator, right);
@@ -194,7 +195,7 @@ public class Parser {
     private Stmt varDeclaration() {
         Token name = this.consume(IDENTIFIER, "Except Variable name.");
         Expr initializer = null;
-        if(this.match(EQUAL)){
+        if (this.match(EQUAL)) {
             initializer = this.expression();
         }
 
@@ -202,10 +203,9 @@ public class Parser {
         return new Stmt.Var(name, initializer);
     }
 
-
     private boolean match(TokenType... types) {
-        for (TokenType type: types) {
-            if (this.check(type)){
+        for (TokenType type : types) {
+            if (this.check(type)) {
                 this.advance();
                 return true;
             }
@@ -238,15 +238,17 @@ public class Parser {
         while (true) {
             if (this.match(LEFT_PAREN)) {
                 expr = this.finishCall(expr);
-            } else if (this.match(DOT)){
+            } else if (this.match(DOT)) {
                 Token name = this.consume(IDENTIFIER,
                         "Expect property name after '.'.");
                 expr = new Expr.Get(expr, name);
-            }else {
-                break;}
+            } else {
+                break;
+            }
         }
         return expr;
     }
+
     private Expr finishCall(Expr callee) {
         List<Expr> arguments = new ArrayList<>();
         if (!this.check(RIGHT_PAREN)) {
@@ -267,15 +269,16 @@ public class Parser {
         if (this.match(TRUE)) return new Expr.Literal(true);
         if (this.match(NIL)) return new Expr.Literal(null);
         if (this.match(NUMBER, STRING)) {
-            return new Expr.Literal(this.previous().literal);}
+            return new Expr.Literal(this.previous().literal);
+        }
         if (this.match(THIS)) return new Expr.This(this.previous());
-        if (this.match(SUPER)){
+        if (this.match(SUPER)) {
             Token keyword = this.previous();
             this.consume(DOT, "Expect '.' after super.");
             Token method = this.consume(IDENTIFIER, "Expect superclass method name.");
-            return new Expr.Super(keyword,method);
+            return new Expr.Super(keyword, method);
         }
-        if (this.match(IDENTIFIER)){
+        if (this.match(IDENTIFIER)) {
             return new Expr.Variable(this.previous());
         }
         if (this.match(LEFT_PAREN)) {
@@ -286,27 +289,24 @@ public class Parser {
         throw this.error(this.peek(), "Expect expression.");
     }
 
-
     private boolean check(TokenType type) {
         if (this.isAtEnd()) return false;
         return this.peek().type == type;
     }
+
     private Token consume(TokenType type, String message) {
         if (this.check(type)) return this.advance();
         throw this.error(this.peek(), message);
     }
-
 
     private ParseError error(Token token, String message) {
         Mocha.error(token, message);
         return new ParseError();
     }
 
-
-
-    List<Stmt> parse(){
+    List<Stmt> parse() {
         List<Stmt> statements = new ArrayList<>();
-        while (!this.isAtEnd()){
+        while (!this.isAtEnd()) {
             statements.add(this.declaration());
         }
 
@@ -324,7 +324,7 @@ public class Parser {
             if (this.match(FUN)) return this.function("function");
             if (this.match(VAR)) return this.varDeclaration();
             return this.statement();
-        }catch(ParseError error){
+        } catch (ParseError error) {
             this.synchronize();
             return null;
         }
@@ -333,7 +333,7 @@ public class Parser {
     private Stmt classDeclaration() {
         Token name = this.consume(IDENTIFIER, "Expect class name.");
         Expr.Variable superclass = null;
-        if(this.match(LESS)){
+        if (this.match(LESS)) {
             this.consume(IDENTIFIER, "Expect superclass name.");
             superclass = new Expr.Variable(this.previous());
         }
@@ -343,7 +343,7 @@ public class Parser {
             methods.add(this.function("method"));
         }
         this.consume(RIGHT_BRACE, "Expect '}' after class body.");
-        return new Stmt.Class(name,superclass, methods);
+        return new Stmt.Class(name, superclass, methods);
     }
 
     private Stmt.Function function(String kind) {
@@ -368,9 +368,11 @@ public class Parser {
     private boolean isAtEnd() {
         return EOF == this.peek().type;
     }
+
     private Token peek() {
         return this.tokens.get(this.current);
     }
+
     private Token previous() {
         return this.tokens.get(this.current - 1);
     }
@@ -392,5 +394,8 @@ public class Parser {
             }
             this.advance();
         }
+    }
+
+    private static class ParseError extends RuntimeException {
     }
 }

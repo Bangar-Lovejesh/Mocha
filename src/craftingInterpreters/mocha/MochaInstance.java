@@ -16,18 +16,20 @@ class MochaInstance {
         return this.klass.name + " Instance";
     }
 
-    Object get(Token name){
-        if(this.fields.containsKey(name.lexeme)){
+    Object get(Token name) {
+        if (this.fields.containsKey(name.lexeme)) {
             return this.fields.get(name.lexeme);
         }
 
         MochaFunction method = this.klass.findMethod(name.lexeme);
-        if(null != method){return method.bind(this);}
+        if (null != method) {
+            return method.bind(this);
+        }
 
-        throw new RuntimeError(name , "Undefined property '" + name.lexeme+"'.");
+        throw new RuntimeError(name, "Undefined property '" + name.lexeme + "'.");
     }
 
-    void set(Token name, Object value){
+    void set(Token name, Object value) {
         this.fields.put(name.lexeme, value);
     }
 }

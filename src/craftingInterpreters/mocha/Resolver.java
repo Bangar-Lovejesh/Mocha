@@ -10,20 +10,11 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     private final Stack<Map<String, Boolean>> scopes = new Stack<>();
     private FunctionType currentFunction = FunctionType.NONE;
     private ClassType currentClass = ClassType.NONE;
+
     Resolver(Interpreter interpreter) {
         this.interpreter = interpreter;
     }
-    private enum FunctionType{
-        NONE,
-        FUNCTION,
-        INITIALIZER,
-        METHOD
-    }
-    private enum ClassType{
-        NONE,
-        CLASS,
-        SUBCLASS
-    }
+
     @Override
     public Void visitBlockStmt(Stmt.Block stmt) {
         this.beginScope();
@@ -35,7 +26,7 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     @Override
     public Void visitVarStmt(Stmt.Var stmt) {
         this.declare(stmt.name);
-        if(null != stmt.initializer) {
+        if (null != stmt.initializer) {
             this.resolve(stmt.initializer);
         }
         this.define(stmt.name);
@@ -44,17 +35,17 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitVariableExpr(Expr.Variable expr) {
-        if(!this.scopes.isEmpty() && this.scopes.peek().get(expr.name.lexeme) == Boolean.FALSE){
+        if (!this.scopes.isEmpty() && this.scopes.peek().get(expr.name.lexeme) == Boolean.FALSE) {
             Mocha.error(expr.name, "Can't read local variable in its own initializer.");
         }
-        this.resolveLocal(expr,expr.name);
+        this.resolveLocal(expr, expr.name);
         return null;
     }
 
     @Override
     public Void visitAssignExpr(Expr.Assign expr) {
         this.resolve(expr.value);
-        this.resolveLocal(expr,expr.name);
+        this.resolveLocal(expr, expr.name);
         return null;
     }
 
@@ -69,7 +60,7 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     public Void visitCallExpr(Expr.Call expr) {
         this.resolve(expr.callee);
 
-        for(Expr argument : expr.arguments) {
+        for (Expr argument : expr.arguments) {
             this.resolve(argument);
         }
         return null;
@@ -108,23 +99,22 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitSuperExpr(Expr.Super expr) {
-        if(ClassType.NONE == this.currentClass){
+        if (ClassType.NONE == this.currentClass) {
             Mocha.error(expr.keyword, "Can't use 'super' outside of a class.");
-        }
-        else if (ClassType.SUBCLASS != this.currentClass){
+        } else if (ClassType.SUBCLASS != this.currentClass) {
             Mocha.error(expr.keyword, "Can't use 'super' in a class with no subclass.");
         }
-        this.resolveLocal(expr,expr.keyword);
+        this.resolveLocal(expr, expr.keyword);
         return null;
     }
 
     @Override
     public Void visitThisExpr(Expr.This expr) {
-        if(ClassType.NONE == this.currentClass){
+        if (ClassType.NONE == this.currentClass) {
             Mocha.error(expr.keyword, "Can't use 'THIS' outside of a class.");
             return null;
         }
-        this.resolveLocal(expr,expr.keyword);
+        this.resolveLocal(expr, expr.keyword);
         return null;
     }
 
@@ -152,7 +142,7 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     public Void visitIfStmt(Stmt.If stmt) {
         this.resolve(stmt.condition);
         this.resolve(stmt.thenBranch);
-        if(null != stmt.elseBranch) {
+        if (null != stmt.elseBranch) {
             this.resolve(stmt.elseBranch);
         }
         return null;
@@ -166,10 +156,10 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitReturnStmt(Stmt.Return stmt) {
-        if(FunctionType.NONE == this.currentFunction) {
+        if (FunctionType.NONE == this.currentFunction) {
             Mocha.error(stmt.keyword, "Can't return from top-level code.");
         }
-        if(null != stmt.value) {
+        if (null != stmt.value) {
             if (FunctionType.INITIALIZER == this.currentFunction) {
                 Mocha.error(stmt.keyword,
                         "Can't return a value from an initializer.");
@@ -192,16 +182,16 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         this.currentClass = ClassType.CLASS;
         this.declare(stmt.name);
         this.define(stmt.name);
-        if(null != stmt.superclass && stmt.name.lexeme.equals(stmt.superclass.name.lexeme)){
+        if (null != stmt.superclass && stmt.name.lexeme.equals(stmt.superclass.name.lexeme)) {
             Mocha.error(stmt.superclass.name, "A class cannot inherit from itself.");
         }
-        if(null != stmt.superclass) {
+        if (null != stmt.superclass) {
             this.currentClass = ClassType.SUBCLASS;
             this.resolve(stmt.superclass);
         }
-        if(null != stmt.superclass){
+        if (null != stmt.superclass) {
             this.beginScope();
-            this.scopes.peek().put("super",true);
+            this.scopes.peek().put("super", true);
         }
         this.beginScope();
         this.scopes.peek().put("this", true);
@@ -213,7 +203,7 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
             this.resolveFunction(method, declaration);
         }
         this.endScope();
-        if(null != stmt.superclass){
+        if (null != stmt.superclass) {
             this.endScope();
         }
         this.currentClass = enclosingClass;
@@ -224,7 +214,7 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         FunctionType enclosingFunction = this.currentFunction;
         this.currentFunction = type;
         this.beginScope();
-        for(Token param:function.params){
+        for (Token param : function.params) {
             this.declare(param);
             this.define(param);
         }
@@ -241,8 +231,6 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     }
 
-
-
     private void resolve(Stmt statement) {
         statement.accept(this);
     }
@@ -255,31 +243,45 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         this.scopes.push(new HashMap<>());
     }
 
-    private void endScope(){
+    private void endScope() {
         this.scopes.pop();
     }
 
-    private void declare(Token name){
+    private void declare(Token name) {
         if (this.scopes.isEmpty()) return;
 
         Map<String, Boolean> scope = this.scopes.peek();
-        if(scope.containsKey(name.lexeme)){
+        if (scope.containsKey(name.lexeme)) {
             Mocha.error(name, "Already variable with this name in this scope");
         }
         scope.put(name.lexeme, false);
 
     }
+
     private void define(Token name) {
         if (this.scopes.isEmpty()) return;
         this.scopes.peek().put(name.lexeme, true);
     }
 
     private void resolveLocal(Expr expr, Token name) {
-        for(int i = this.scopes.size()-1; 0 <= i; i--){
-            if(this.scopes.get(i).containsKey(name.lexeme)){
-                this.interpreter.resolve(expr, this.scopes.size()-1-i);
+        for (int i = this.scopes.size() - 1; 0 <= i; i--) {
+            if (this.scopes.get(i).containsKey(name.lexeme)) {
+                this.interpreter.resolve(expr, this.scopes.size() - 1 - i);
                 return;
             }
         }
+    }
+
+    private enum FunctionType {
+        NONE,
+        FUNCTION,
+        INITIALIZER,
+        METHOD
+    }
+
+    private enum ClassType {
+        NONE,
+        CLASS,
+        SUBCLASS
     }
 }
