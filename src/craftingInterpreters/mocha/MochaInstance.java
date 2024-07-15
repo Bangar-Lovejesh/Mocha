@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 class MochaInstance {
-    private MochaClass klass;
+    private final MochaClass klass;
     private final Map<String, Object> fields = new HashMap<>();
 
     MochaInstance(MochaClass klass) {
@@ -13,21 +13,23 @@ class MochaInstance {
 
     @Override
     public String toString() {
-        return klass.name + " Instance";
+        return this.klass.name + " Instance";
     }
 
-    Object get(Token name){
-        if(fields.containsKey(name.lexeme)){
-            return fields.get(name.lexeme);
+    Object get(Token name) {
+        if (this.fields.containsKey(name.lexeme)) {
+            return this.fields.get(name.lexeme);
         }
 
-        MochaFunction method = klass.findMethod(name.lexeme);
-        if(method != null){return method.bind(this);}
+        MochaFunction method = this.klass.findMethod(name.lexeme);
+        if (null != method) {
+            return method.bind(this);
+        }
 
-        throw new RuntimeError(name , "Undefined property '" + name.lexeme+"'.");
+        throw new RuntimeError(name, "Undefined property '" + name.lexeme + "'.");
     }
 
-    void set(Token name, Object value){
-        fields.put(name.lexeme, value);
+    void set(Token name, Object value) {
+        this.fields.put(name.lexeme, value);
     }
 }

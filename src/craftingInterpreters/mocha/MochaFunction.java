@@ -2,7 +2,7 @@ package src.craftingInterpreters.mocha;
 
 import java.util.List;
 
-class MochaFunction implements MochaCallable{
+class MochaFunction implements MochaCallable {
     private final Stmt.Function declaration;
     private final Environment closure;
     private final boolean isInitializer;
@@ -12,38 +12,39 @@ class MochaFunction implements MochaCallable{
         this.declaration = declaration;
         this.isInitializer = isInitializer;
     }
+
     @Override
     public int arity() {
-        return declaration.params.size();
+        return this.declaration.params.size();
     }
 
     @Override
     public Object call(Interpreter interpreter,
                        List<Object> arguments) {
-        Environment environment = new Environment(closure);
-        for (int i = 0; i < declaration.params.size(); i++) {
-            environment.define(declaration.params.get(i).lexeme,
+        Environment environment = new Environment(this.closure);
+        for (int i = 0; i < this.declaration.params.size(); i++) {
+            environment.define(this.declaration.params.get(i).lexeme,
                     arguments.get(i));
         }
-        try{
-            interpreter.executeBlock(declaration.body, environment);
+        try {
+            interpreter.executeBlock(this.declaration.body, environment);
         } catch (Return returnValue) {
-            if(isInitializer) return closure.getAt(0,"this");
+            if (this.isInitializer) return this.closure.getAt(0, "this");
             return returnValue.value;
         }
-        if (isInitializer) return closure.getAt(0, "this");
+        if (this.isInitializer) return this.closure.getAt(0, "this");
         return null;
     }
 
     @Override
     public String toString() {
-        return "<fn "+declaration.name.lexeme+">";
+        return "<fn " + this.declaration.name.lexeme + ">";
     }
 
     MochaFunction bind(MochaInstance instance) {
-        Environment environment = new Environment(closure);
+        Environment environment = new Environment(this.closure);
         environment.define("this", instance);
-        return new MochaFunction(declaration, environment,isInitializer);
+        return new MochaFunction(this.declaration, environment, this.isInitializer);
 
     }
 }

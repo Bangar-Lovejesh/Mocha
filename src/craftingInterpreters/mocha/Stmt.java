@@ -3,143 +3,157 @@ package src.craftingInterpreters.mocha;
 import java.util.List;
 
 abstract class Stmt {
- interface Visitor<R> {
- R visitBlockStmt(Block stmt);
- R visitClassStmt(Class stmt);
- R visitExpressionStmt(Expression stmt);
- R visitFunctionStmt(Function stmt);
- R visitIfStmt(If stmt);
- R visitPrintStmt(Print stmt);
- R visitReturnStmt(Return stmt);
- R visitVarStmt(Var stmt);
- R visitWhileStmt(While stmt);
- }
- static class Block extends Stmt {
- Block(List<Stmt> statements) {
- this.statements = statements;
- }
+    abstract <R> void accept(Visitor<R> visitor);
 
- @Override
- <R> R accept(Visitor<R> visitor) {
- return visitor.visitBlockStmt(this);
- }
+    interface Visitor<R> {
+        R visitBlockStmt(Block stmt);
 
- final List<Stmt> statements;
- }
- static class Class extends Stmt {
- Class(Token name, Expr.Variable superclass, List<Stmt.Function> methods) {
- this.name = name;
- this.superclass = superclass;
- this.methods = methods;
- }
+        R visitClassStmt(Class stmt);
 
- @Override
- <R> R accept(Visitor<R> visitor) {
- return visitor.visitClassStmt(this);
- }
+        R visitExpressionStmt(Expression stmt);
 
- final Token name;
- final Expr.Variable superclass;
- final List<Stmt.Function> methods;
- }
- static class Expression extends Stmt {
- Expression(Expr expression) {
- this.expression = expression;
- }
+        R visitFunctionStmt(Function stmt);
 
- @Override
- <R> R accept(Visitor<R> visitor) {
- return visitor.visitExpressionStmt(this);
- }
+        R visitIfStmt(If stmt);
 
- final Expr expression;
- }
- static class Function extends Stmt {
- Function(Token name, List<Token> params, List<Stmt> body) {
- this.name = name;
- this.params = params;
- this.body = body;
- }
+        R visitPrintStmt(Print stmt);
 
- @Override
- <R> R accept(Visitor<R> visitor) {
- return visitor.visitFunctionStmt(this);
- }
+        R visitReturnStmt(Return stmt);
 
- final Token name;
- final List<Token> params;
- final List<Stmt> body;
- }
- static class If extends Stmt {
- If(Expr condition, Stmt thenBranch, Stmt elseBranch) {
- this.condition = condition;
- this.thenBranch = thenBranch;
- this.elseBranch = elseBranch;
- }
+        R visitVarStmt(Var stmt);
 
- @Override
- <R> R accept(Visitor<R> visitor) {
- return visitor.visitIfStmt(this);
- }
+        R visitWhileStmt(While stmt);
+    }
 
- final Expr condition;
- final Stmt thenBranch;
- final Stmt elseBranch;
- }
- static class Print extends Stmt {
- Print(Expr expression) {
- this.expression = expression;
- }
+    static class Block extends Stmt {
+        final List<Stmt> statements;
 
- @Override
- <R> R accept(Visitor<R> visitor) {
- return visitor.visitPrintStmt(this);
- }
+        Block(List<Stmt> statements) {
+            this.statements = statements;
+        }
 
- final Expr expression;
- }
- static class Return extends Stmt {
- Return(Token keyword, Expr value) {
- this.keyword = keyword;
- this.value = value;
- }
+        @Override
+        <R> void accept(Visitor<R> visitor) {
+            visitor.visitBlockStmt(this);
+        }
+    }
 
- @Override
- <R> R accept(Visitor<R> visitor) {
- return visitor.visitReturnStmt(this);
- }
+    static class Class extends Stmt {
+        final Token name;
+        final Expr.Variable superclass;
+        final List<Stmt.Function> methods;
+        Class(Token name, Expr.Variable superclass, List<Stmt.Function> methods) {
+            this.name = name;
+            this.superclass = superclass;
+            this.methods = methods;
+        }
 
- final Token keyword;
- final Expr value;
- }
- static class Var extends Stmt {
- Var(Token name, Expr initializer) {
- this.name = name;
- this.initializer = initializer;
- }
+        @Override
+        <R> void accept(Visitor<R> visitor) {
+            visitor.visitClassStmt(this);
+        }
+    }
 
- @Override
- <R> R accept(Visitor<R> visitor) {
- return visitor.visitVarStmt(this);
- }
+    static class Expression extends Stmt {
+        final Expr expression;
 
- final Token name;
- final Expr initializer;
- }
- static class While extends Stmt {
- While(Expr condition, Stmt body) {
- this.condition = condition;
- this.body = body;
- }
+        Expression(Expr expression) {
+            this.expression = expression;
+        }
 
- @Override
- <R> R accept(Visitor<R> visitor) {
- return visitor.visitWhileStmt(this);
- }
+        @Override
+        <R> void accept(Visitor<R> visitor) {
+            visitor.visitExpressionStmt(this);
+        }
+    }
 
- final Expr condition;
- final Stmt body;
- }
+    static class Function extends Stmt {
+        final Token name;
+        final List<Token> params;
+        final List<Stmt> body;
+        Function(Token name, List<Token> params, List<Stmt> body) {
+            this.name = name;
+            this.params = params;
+            this.body = body;
+        }
 
- abstract <R> R accept(Visitor<R> visitor);
+        @Override
+        <R> void accept(Visitor<R> visitor) {
+            visitor.visitFunctionStmt(this);
+        }
+    }
+
+    static class If extends Stmt {
+        final Expr condition;
+        final Stmt thenBranch;
+        final Stmt elseBranch;
+        If(Expr condition, Stmt thenBranch, Stmt elseBranch) {
+            this.condition = condition;
+            this.thenBranch = thenBranch;
+            this.elseBranch = elseBranch;
+        }
+
+        @Override
+        <R> void accept(Visitor<R> visitor) {
+            visitor.visitIfStmt(this);
+        }
+    }
+
+    static class Print extends Stmt {
+        final Expr expression;
+
+        Print(Expr expression) {
+            this.expression = expression;
+        }
+
+        @Override
+        <R> void accept(Visitor<R> visitor) {
+            visitor.visitPrintStmt(this);
+        }
+    }
+
+    static class Return extends Stmt {
+        final Token keyword;
+        final Expr value;
+
+        Return(Token keyword, Expr value) {
+            this.keyword = keyword;
+            this.value = value;
+        }
+
+        @Override
+        <R> void accept(Visitor<R> visitor) {
+            visitor.visitReturnStmt(this);
+        }
+    }
+
+    static class Var extends Stmt {
+        final Token name;
+        final Expr initializer;
+
+        Var(Token name, Expr initializer) {
+            this.name = name;
+            this.initializer = initializer;
+        }
+
+        @Override
+        <R> void accept(Visitor<R> visitor) {
+            visitor.visitVarStmt(this);
+        }
+    }
+
+    static class While extends Stmt {
+        final Expr condition;
+        final Stmt body;
+
+        While(Expr condition, Stmt body) {
+            this.condition = condition;
+            this.body = body;
+        }
+
+        @Override
+        <R> void accept(Visitor<R> visitor) {
+            visitor.visitWhileStmt(this);
+        }
+    }
 }

@@ -10,11 +10,11 @@ public class Token {
         this.type = type;
         this.lexeme = lexeme;
         this.literal = literal;
-        this.line= line;
+        this.line = line;
 
     }
 
-    public String toString(){
-        return type + " " + lexeme + " " + literal;
+    public String toString() {
+        return this.type + " " + this.lexeme + " " + this.literal;
     }
 }
